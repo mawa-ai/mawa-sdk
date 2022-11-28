@@ -1,16 +1,32 @@
-const contexts: Record<string, Record<string, unknown>> = {}
+import { ObjectId } from 'https://deno.land/x/mongo@v0.31.1/mod.ts'
+import { UserId } from '../../sdk/user.ts'
+import { getCollection } from './mongodb.ts'
 
-export const setKv = <T>(userId: string, key: string, value: T): Promise<void> => {
-    if (!contexts[userId]) {
-        contexts[userId] = {}
-    }
-    contexts[userId][key] = value
-    return Promise.resolve()
+type ContextVariableSchema = {
+    _id: ObjectId
+    userId: UserId
+    key: string
+    value: unknown
 }
 
-export const getKv = <T>(userId: string, key: string): Promise<T | undefined> => {
-    if (!contexts[userId]) {
-        return Promise.resolve(undefined)
-    }
-    return Promise.resolve(contexts[userId][key] as T)
+export const setKv = async <T>(userId: UserId, key: string, value: T): Promise<void> => {
+    const collection = await getCollection<ContextVariableSchema>('contexts')
+    await collection.updateOne(
+        { userId, key },
+        {
+            $set: {
+                value,
+            },
+        },
+        { upsert: true },
+    )
+}
+
+export const getKv = async <T>(userId: UserId, key: string): Promise<T | undefined> => {
+    const collection = await getCollection<ContextVariableSchema>('contexts')
+    const entity = await collection.findOne({
+        userId,
+        key,
+    })
+    return entity && (entity.value as T)
 }
