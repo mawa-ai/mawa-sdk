@@ -1,13 +1,32 @@
 export type PlainText = string
+
+type Option =
+    | string
+    | {
+          title: string
+          description?: string
+      }
+
+export type Section = {
+    title?: string
+    options: Option[]
+}
+
 export type Menu = {
     text: string
     button: string
+    sections: Section[]
+}
+
+export type QuickReply = {
+    text: string
     options: string[]
 }
 
 export type MessageTypes = {
     ['text']: PlainText
     ['menu']: Menu
+    ['quick-reply']: QuickReply
 }
 
 export type Message<Type extends keyof MessageTypes> = {

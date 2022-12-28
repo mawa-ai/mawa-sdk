@@ -2,8 +2,8 @@ import { ChannelsConfiguration } from '../../sdk/config.ts'
 import { UnknownMessage } from '../../sdk/message.ts'
 import { config } from '../config.ts'
 import { Gateway } from './gateway.ts'
-import { RawGateway } from './raw.ts'
-import { WhatsappGateway } from './whatsapp.ts'
+import { RawGateway } from './raw/raw.ts'
+import { WhatsappGateway } from './whatsapp/whatsapp.ts'
 
 type MessageHandler = (gatewayAuthorId: string, message: UnknownMessage, gateway: Gateway) => Promise<void>
 
@@ -13,26 +13,31 @@ const gatewayPatterns = gateways.map((gateway) => ({
     gateway,
 }))
 
-const resolveGateway = async (request: Request, onMessage: MessageHandler) => {
+const resolveGateway = async (request: Request, onMessage: MessageHandler): Promise<Response> => {
     const gateway = gatewayPatterns.find((gateway) => gateway.pattern.test(request.url))?.gateway
     if (!gateway || !config().channels[gateway.sourceId as keyof ChannelsConfiguration]) {
-        console.log('No gateway found for', request.url)
-        return
+        throw new Error('No gateway found for ' + request.url)
     }
 
-    const gatewayResolution = await gateway.receive(request)
-    await onMessage(gatewayResolution.sourceAuthorId, gatewayResolution.message, gateway)
+    const sourceMessage = await gateway.receive(request)
+    if (sourceMessage instanceof Response) {
+        return sourceMessage
+    } else {
+        await onMessage(sourceMessage.sourceAuthorId, sourceMessage.message, gateway)
+        return new Response()
+    }
 }
 
 const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler) => {
     const httpConn = Deno.serveHttp(conn)
     for await (const requestEvent of httpConn) {
         try {
-            await resolveGateway(requestEvent.request, onMessage)
-            requestEvent.respondWith(new Response())
+            requestEvent.respondWith(await resolveGateway(requestEvent.request, onMessage))
         } catch (err) {
             console.error('Error receiving message', err)
-            requestEvent.respondWith(Response.json({ error: 'Error receiving message: ' + err.message }, { status: 500 }))
+            requestEvent.respondWith(
+                Response.json({ error: 'Error receiving message: ' + err.message }, { status: 500 }),
+            )
         }
     }
 }

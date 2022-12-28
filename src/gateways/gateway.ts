@@ -7,6 +7,6 @@ export type SourceMessage = {
 
 export interface Gateway {
     sourceId: string
-    receive: (request: Request) => Promise<SourceMessage>
+    receive: (request: Request) => Promise<SourceMessage | Response>
     send: (sourceAuthorId: string, message: UnknownMessage) => Promise<void>
 }

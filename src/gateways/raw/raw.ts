@@ -1,18 +1,13 @@
-import { UnknownMessage } from '../../sdk/message.ts'
-import { Gateway, SourceMessage } from './gateway.ts'
-import { getIdFromSourceId, mergeUser } from '../services/user.ts'
-import { config } from '../config.ts'
-import { RawChannelConfiguration } from '../../sdk/config.ts'
+import { UnknownMessage } from '../../../sdk/message.ts'
+import { Gateway, SourceMessage } from '../gateway.ts'
+import { config } from '../../config.ts'
+import { RawChannelConfiguration } from '../../../sdk/config.ts'
 
 export class RawGateway implements Gateway {
     public sourceId = 'raw'
 
     public async receive(request: Request): Promise<SourceMessage> {
         const { from: sourceAuthorId, message } = await request.json()
-
-        const userId = getIdFromSourceId(sourceAuthorId, this.sourceId)
-        await mergeUser(userId, {})
-
         return { sourceAuthorId, message }
     }
 

@@ -1,9 +1,12 @@
-import { readLines } from 'https://deno.land/std@0.165.0/io/buffer.ts'
+import { readLines } from 'https://deno.land/std@0.170.0/io/mod.ts'
 
-Deno.run({
+const run = Deno.run({
     cwd: './src',
     cmd: ['deno', 'run', '--allow-all', '../../src/index.ts'],
     stdout: 'piped',
+})
+run.status().finally(() => {
+    Deno.exit(1)
 })
 
 const sendMessage = async (message: string) => {

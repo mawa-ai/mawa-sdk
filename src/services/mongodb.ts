@@ -3,10 +3,13 @@ import { config } from '../config.ts'
 
 let database: Database
 export const getCollection = async <T>(collection: string): Promise<Collection<T>> => {
+    const storageConfig = config().storage
+    if (storageConfig.type !== 'mongodb') throw new Error('Storage type is not mongodb')
+
     if (!database) {
         const client = new MongoClient()
-        await client.connect(config().mongodb.url)
-        database = client.database(config().mongodb.database)
+        await client.connect(storageConfig.config.url)
+        database = client.database(storageConfig.config.database)
     }
     return database.collection<T>(collection)
 }

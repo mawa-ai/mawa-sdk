@@ -5,7 +5,7 @@ const configurationWatchers: (() => unknown)[] = []
 
 const loadConfiguration = async (configFile: string, terminateIfError = false) => {
     try {
-        const config = await import(`${configFile}?${Date.now()}`)
+        const config = await import(`file:///${configFile}?${Date.now()}`)
         configuration = config.default
 
         configurationWatchers.forEach((watcher) => watcher())
