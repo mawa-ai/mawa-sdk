@@ -1,6 +1,7 @@
 import { ChannelsConfiguration } from '../../sdk/config.ts'
 import { UnknownMessage } from '../../sdk/message.ts'
 import { config } from '../config.ts'
+import { logger } from '../log.ts'
 import { Gateway } from './gateway.ts'
 import { RawGateway } from './raw/raw.ts'
 import { WhatsappGateway } from './whatsapp/whatsapp.ts'
@@ -34,7 +35,7 @@ const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler)
         try {
             requestEvent.respondWith(await resolveGateway(requestEvent.request, onMessage))
         } catch (err) {
-            console.error('Error receiving message', err)
+            logger.error('Error receiving message', err)
             requestEvent.respondWith(
                 Response.json({ error: 'Error receiving message: ' + err.message }, { status: 500 }),
             )
@@ -44,7 +45,8 @@ const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler)
 
 export const initializeGateways = async (onMessage: MessageHandler) => {
     const server = Deno.listen({ port: config().port })
-    console.log(`Listening on port ${config().port}`)
+    logger.info(`Listening on port ${config().port}`)
+
     for await (const conn of server) {
         // In order to not be blocking, we need to handle each connection individually
         // without awaiting the function

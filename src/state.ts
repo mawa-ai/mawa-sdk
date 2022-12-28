@@ -6,6 +6,7 @@ import { getIdFromSourceId, getUser, mergeUser } from './services/user/user.ts'
 import { executeHook } from './hooks.ts'
 import { ErrorHook, MessageHook } from '../sdk/hooks.ts'
 import { config } from './config.ts'
+import { logger } from './log.ts'
 
 const sendMessage = async (sourceUserId: string, messageOrText: UnknownMessage | string, gateway: Gateway) => {
     const message =
@@ -48,6 +49,13 @@ export const handleMessage = async (
         }
 
         const currentState = (await getKv<string>(user.id, '#state')) || 'start'
+        logger.debug('Executing state ' + currentState + ' for user ' + user.id, {
+            user,
+            message,
+            gateway: gateway.sourceId,
+            state: currentState,
+        })
+
         const file = `${directory}/flow/${currentState}.ts`
         const module = await import('file:///' + file)
 
@@ -60,7 +68,8 @@ export const handleMessage = async (
             await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1)
         }
     } catch (err) {
-        console.error('Error handling message:', err)
+        logger.error('Error handling message:', err)
+
         const stateResult = await executeHook<ErrorHook>(directory, 'error', context, err)
         if (stateResult) {
             await setKv(user.id, '#last-state', await getKv(user.id, '#state'))

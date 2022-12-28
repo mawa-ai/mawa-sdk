@@ -4,6 +4,7 @@ import { config } from '../../config.ts'
 import { Gateway, SourceMessage } from '../gateway.ts'
 import { whatsappTextConverter } from './converters/text.ts'
 import { getIdFromSourceId, mergeUser } from '../../services/user/user.ts'
+import { logger } from '../../log.ts'
 
 const converters = [whatsappTextConverter]
 
@@ -25,14 +26,18 @@ export class WhatsappGateway implements Gateway {
         } else if (request.method === 'POST') {
             const body = await request.json()
 
+            logger.debug('Received request from whatsapp', body)
+
             const value = body.entry[0].changes[0].value
             if (value.metadata.phone_number_id !== this.config.numberId) {
+                logger.debug('Received message from another number', value)
                 return new Response('Invalid message', { status: 400 })
             }
 
             const waMessage = value.messages?.[0]
             // Probably a status message
             if (!waMessage) {
+                logger.debug('Received message without message', value)
                 return new Response()
             }
 
@@ -40,6 +45,11 @@ export class WhatsappGateway implements Gateway {
             const name = value.contacts[0].profile.name
 
             const message = this.convertFromWhatsappMessage(waMessage)
+            if (!message) {
+                logger.debug('Could not convert received message', waMessage)
+                return new Response()
+            }
+
             const userId = await getIdFromSourceId(waid, this.sourceId)
             await mergeUser(userId, { name, phoneNumber: waid })
 
@@ -59,6 +69,9 @@ export class WhatsappGateway implements Gateway {
             'Content-Type': 'application/json',
         })
 
+        const whatsappMessage = this.convertToWhatsappMessage(message) as Record<string, unknown>
+        logger.info('Sending message to whatsapp', whatsappMessage)
+
         const result = await fetch(url, {
             method: 'POST',
             headers: headers,
@@ -66,16 +79,16 @@ export class WhatsappGateway implements Gateway {
                 messaging_product: 'whatsapp',
                 recipient_type: 'individual',
                 to: sourceAuthorId,
-                ...(this.convertToWhatsappMessage(message) as Record<string, unknown>),
+                ...whatsappMessage,
             }),
         })
 
         if (result.status !== 200) {
             try {
-                const response = await result.text()
-                console.error(response)
+                const response = await result.json()
+                logger.error('Failed to send message to whatsapp: ' + result.status, response)
             } catch (err) {
-                console.error("Couldn't parse response: ", err)
+                logger.error("Couldn't parse response: ", err)
             }
 
             throw new Error(`Failed to send message to whatsapp: ${result.status}`)
@@ -96,7 +109,7 @@ export class WhatsappGateway implements Gateway {
         throw new Error(`No converter found for message type ${message.type}`)
     }
 
-    private convertFromWhatsappMessage(message: unknown): UnknownMessage {
+    private convertFromWhatsappMessage(message: unknown): UnknownMessage | undefined {
         for (const converter of converters) {
             if (converter.isSourceConverter(message)) {
                 return {
@@ -106,6 +119,6 @@ export class WhatsappGateway implements Gateway {
             }
         }
 
-        throw new Error(`No converter found for whatsapp message`)
+        return undefined
     }
 }
