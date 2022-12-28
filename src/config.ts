@@ -6,6 +6,8 @@ const configurationWatchers: (() => void | Promise<void>)[] = []
 
 const loadConfiguration = async (configFile: string, terminateIfError = false) => {
     try {
+        logger.debug('Loading configuration file', configFile)
+
         const config = await import(`file:///${configFile}?${Date.now()}`)
         configuration = config.default
 
@@ -13,7 +15,7 @@ const loadConfiguration = async (configFile: string, terminateIfError = false) =
 
         configurationWatchers.forEach((watcher) => watcher())
     } catch (err) {
-        logger.error('Error loading configuration file:', err)
+        logger.error(err, 'Error loading configuration file')
         if (terminateIfError) {
             Deno.exit(1)
         }
@@ -38,12 +40,14 @@ export const onConfigurationsLoaded = (callback: typeof configurationWatchers[0]
     configurationWatchers.push(callback)
 }
 
-export const initializeConfiguration = async (directory: string) => {
+export const initializeConfiguration = async (directory: string, watchForChanges: boolean) => {
     const configFile = directory + '/mawa.config.ts'
     await loadConfiguration(configFile, true)
 
-    // Cannot await this function, otherwise the server will never start
-    initializeConfigurationChangesWatcher(configFile)
+    if (watchForChanges) {
+        // Cannot await this function, otherwise the server will never start
+        initializeConfigurationChangesWatcher(configFile)
+    }
 }
 
 export const config = () => configuration

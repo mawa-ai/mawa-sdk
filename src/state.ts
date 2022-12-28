@@ -68,7 +68,7 @@ export const handleMessage = async (
             await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1)
         }
     } catch (err) {
-        logger.error('Error handling message:', err)
+        logger.error(err)
 
         const stateResult = await executeHook<ErrorHook>(directory, 'error', context, err)
         if (stateResult) {

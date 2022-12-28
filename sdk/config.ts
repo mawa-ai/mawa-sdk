@@ -34,5 +34,6 @@ export type MawaConfiguration = {
     port: number
     channels: ChannelsConfiguration
     storage: StorageConfiguration
+    logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
     config?: BotConfiguration
 }

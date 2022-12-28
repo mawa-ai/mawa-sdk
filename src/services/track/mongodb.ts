@@ -9,7 +9,11 @@ type EventTrackingSchema = {
     properties: Record<string, unknown>
 }
 
-const track = async (userId: UserId, event: string, properties: Record<string, unknown>): Promise<void> => {
+const track = async (
+    userId: UserId,
+    event: string,
+    properties: Record<string, unknown>,
+): Promise<void> => {
     const collection = await getCollection<EventTrackingSchema>('events')
     await collection.insertOne({
         userId,

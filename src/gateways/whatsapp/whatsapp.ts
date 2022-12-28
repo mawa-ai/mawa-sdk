@@ -50,7 +50,7 @@ export class WhatsappGateway implements Gateway {
                 return new Response()
             }
 
-            const userId = await getIdFromSourceId(waid, this.sourceId)
+            const userId = getIdFromSourceId(waid, this.sourceId)
             await mergeUser(userId, { name, phoneNumber: waid })
 
             return {
@@ -88,7 +88,7 @@ export class WhatsappGateway implements Gateway {
                 const response = await result.json()
                 logger.error('Failed to send message to whatsapp: ' + result.status, response)
             } catch (err) {
-                logger.error("Couldn't parse response: ", err)
+                logger.error(err)
             }
 
             throw new Error(`Failed to send message to whatsapp: ${result.status}`)
