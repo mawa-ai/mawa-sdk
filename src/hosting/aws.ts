@@ -17,7 +17,7 @@ export const getHandler = (directory: string) => {
         }
 
         try {
-            const request = new Request(new URL(event.requestContext.http.path), {
+            const request = new Request(event.requestContext.http.path, {
                 method: event.requestContext.http.method,
                 headers: new Headers({ ...event.headers } as HeadersInit),
                 body: event.body,
