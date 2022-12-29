@@ -21,6 +21,11 @@ export class WhatsappGateway implements Gateway {
             if (mode === 'subscribe' && token === this.config.verifyToken) {
                 return new Response(challenge!)
             } else {
+                logger.debug('Received invalid request from whatsapp', {
+                    mode,
+                    token,
+                    expectedToken: this.config.verifyToken,
+                })
                 return new Response('Invalid token', { status: 403 })
             }
         } else if (request.method === 'POST') {

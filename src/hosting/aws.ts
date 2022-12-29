@@ -17,11 +17,14 @@ export const getHandler = (directory: string) => {
         }
 
         try {
-            const request = new Request(`https://${event.requestContext.domainName}${event.requestContext.http.path}`, {
-                method: event.requestContext.http.method,
-                headers: new Headers({ ...event.headers } as HeadersInit),
-                body: event.body,
-            })
+            const request = new Request(
+                `https://${event.requestContext.domainName}${event.rawPath}?${event.rawQueryString}`,
+                {
+                    method: event.requestContext.http.method,
+                    headers: new Headers({ ...event.headers } as HeadersInit),
+                    body: event.body,
+                },
+            )
             const response = await resolveGateway(request, (sourceAuthorId, message, gateway) =>
                 handleMessage(sourceAuthorId, message, gateway, directory),
             )
