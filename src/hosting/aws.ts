@@ -1,6 +1,6 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'https://deno.land/x/lambda@1.29.1/mod.ts'
 import { config, initializeConfiguration } from '../config.ts'
-import { resolveGateway } from '../gateways/index.ts'
+import { resolveGateway } from '../gateways/gateways.ts'
 import { logger, setMinimumLogLevel } from '../log.ts'
 import { handleMessage } from '../state.ts'
 
@@ -25,12 +25,18 @@ export const getHandler = (directory: string) => {
                     body: event.body,
                 },
             )
-            const response = await resolveGateway(request, (sourceAuthorId, message, gateway) =>
-                handleMessage(sourceAuthorId, message, gateway, directory),
-            )
+            const response = await resolveGateway(request, async (sourceAuthorId, message, gateway) => {
+                logger.info('Received message from ' + sourceAuthorId + ' via ' + gateway.sourceId, {
+                    sourceAuthorId: sourceAuthorId,
+                    message,
+                    gateway: gateway.sourceId,
+                })
+
+                await handleMessage(sourceAuthorId, message, gateway, directory)
+            })
             return {
                 statusCode: response.status,
-                headers: Object.fromEntries(response.headers),
+                headers: Object.fromEntries(response.headers.entries()),
                 body: response.body ? await response.text() : undefined,
             }
         } catch (err) {

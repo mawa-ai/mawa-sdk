@@ -1,20 +1,22 @@
 import { ChannelsConfiguration } from '../../sdk/config.ts'
-import { UnknownMessage } from '../../sdk/message.ts'
 import { config } from '../config.ts'
-import { logger } from '../log.ts'
-import { Gateway } from './gateway.ts'
-import { RawGateway } from './raw/raw.ts'
+import { Gateway, MessageHandler } from './gateway.ts'
+import { WebGateway } from './web/web.ts'
+import { WebhookGateway } from './webhook/webhook.ts'
 import { WhatsappGateway } from './whatsapp/whatsapp.ts'
 
-export type MessageHandler = (gatewayAuthorId: string, message: UnknownMessage, gateway: Gateway) => Promise<void>
+const gateways: Gateway[] = [new WhatsappGateway(), new WebhookGateway(), new WebGateway()]
 
-const gateways = [new WhatsappGateway(), new RawGateway()]
-const gatewayPatterns = gateways.map((gateway) => ({
-    pattern: new URLPattern({ pathname: '/' + gateway.sourceId }),
-    gateway,
-}))
+export const addGateway = (gateway: Gateway) => {
+    gateways.push(gateway)
+}
 
 export const resolveGateway = async (request: Request, onMessage: MessageHandler): Promise<Response> => {
+    const gatewayPatterns = gateways.map((gateway) => ({
+        pattern: new URLPattern({ pathname: `/${gateway.sourceId}` }),
+        gateway,
+    }))
+
     const gateway = gatewayPatterns.find((gateway) => gateway.pattern.test(request.url))?.gateway
     if (!gateway || !config().channels[gateway.sourceId as keyof ChannelsConfiguration]) {
         throw new Error('No gateway found for ' + request.url)
@@ -23,14 +25,12 @@ export const resolveGateway = async (request: Request, onMessage: MessageHandler
     const sourceMessage = await gateway.receive(request)
     if (sourceMessage instanceof Response) {
         return sourceMessage
-    } else {
-        logger.info('Received message from ' + sourceMessage.sourceAuthorId + ' via ' + gateway.sourceId, {
-            sourceAuthorId: sourceMessage.sourceAuthorId,
-            message: sourceMessage.message,
-            gateway: gateway.sourceId,
-        })
-
+    } else if (sourceMessage) {
         await onMessage(sourceMessage.sourceAuthorId, sourceMessage.message, gateway)
         return new Response()
+    } else if (gateway.handle) {
+        return await gateway.handle(request, onMessage)
+    } else {
+        throw new Error('Gateway ' + gateway.sourceId + ' did not return a response')
     }
 }

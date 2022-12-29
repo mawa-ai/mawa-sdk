@@ -1,12 +1,13 @@
 import { Context, StateResult } from '../sdk/state.ts'
-import { Message, UnknownMessage } from '../sdk/message.ts'
+import { isMessageOfType, Message, UnknownMessage } from '../sdk/message.ts'
 import { Gateway } from './gateways/gateway.ts'
-import { getKv, setKv } from './services/context/context.ts'
+import { getKv, setKv } from './services/vars/vars.ts'
 import { getIdFromSourceId, getUser, mergeUser } from './services/user/user.ts'
 import { executeHook } from './hooks.ts'
-import { ErrorHook, MessageHook } from '../sdk/hooks.ts'
+import { ErrorHook, EventHook, MessageHook } from '../sdk/hooks.ts'
 import { config } from './config.ts'
 import { logger } from './log.ts'
+import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
 
 const sendMessage = async (sourceUserId: string, messageOrText: UnknownMessage | string, gateway: Gateway) => {
     const message =
@@ -43,29 +44,33 @@ export const handleMessage = async (
     }
 
     try {
-        const hookResult = await executeHook<MessageHook>(directory, 'message', context)
-        if (hookResult === true) {
-            return
-        }
+        if (isMessageOfType(message, 'event')) {
+            await executeHook<EventHook>(directory, 'event', context)
+        } else {
+            const hookResult = await executeHook<MessageHook>(directory, 'message', context)
+            if (hookResult === true) {
+                return
+            }
 
-        const currentState = (await getKv<string>(user.id, '#state')) || 'start'
-        logger.debug('Executing state ' + currentState + ' for user ' + user.id, {
-            user,
-            message,
-            gateway: gateway.sourceId,
-            state: currentState,
-        })
+            const currentState = (await getKv<string>(user.id, '#state')) || 'start'
+            logger.debug('Executing state ' + currentState + ' for user ' + user.id, {
+                user,
+                message,
+                gateway: gateway.sourceId,
+                state: currentState,
+            })
 
-        const file = `${directory}/flow/${currentState}.ts`
-        const module = await import('file:///' + file)
+            const file = resolve(`${directory}/flow/${currentState}.ts`)
+            const module = await import('file:///' + file)
 
-        const result = await module.default(context)
-        const stateResult: StateResult = result || {}
-        await setKv(user.id, '#last-state', currentState)
-        await setKv(user.id, '#state', stateResult.next || 'default')
+            const result = await module.default(context)
+            const stateResult: StateResult = result || {}
+            await setKv(user.id, '#last-state', currentState)
+            await setKv(user.id, '#state', stateResult.next || 'default')
 
-        if (!stateResult.input) {
-            await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1)
+            if (!stateResult.input) {
+                await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1)
+            }
         }
     } catch (err) {
         logger.error(err)

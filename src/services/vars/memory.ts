@@ -1,23 +1,23 @@
 import { UserId } from '../../../sdk/user.ts'
 
-const contexts: Record<string, Record<string, unknown>> = {}
+const vars: Record<string, Record<string, unknown>> = {}
 
 const setKv = <T>(userId: UserId, key: string, value: T): Promise<void> => {
-    if (!contexts[userId]) {
-        contexts[userId] = {}
+    if (!vars[userId]) {
+        vars[userId] = {}
     }
-    contexts[userId][key] = value
+    vars[userId][key] = value
     return Promise.resolve()
 }
 
 const getKv = <T>(userId: UserId, key: string): Promise<T | undefined> => {
-    if (!contexts[userId]) {
+    if (!vars[userId]) {
         return Promise.resolve(undefined)
     }
-    return Promise.resolve(contexts[userId][key] as T)
+    return Promise.resolve(vars[userId][key] as T)
 }
 
-export const contextMemoryStorage = {
+export const varsMemoryStorage = {
     setKv,
     getKv,
 }

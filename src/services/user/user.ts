@@ -3,7 +3,7 @@ import { config } from '../../config.ts'
 import { userMemoryStorage } from './memory.ts'
 import { userMongoDbStorage } from './mongodb.ts'
 
-export const mergeUser = async (userId: UserId, user: Omit<User, 'id'>): Promise<User> => {
+export const mergeUser = async (userId: UserId, user: Partial<Omit<User, 'id'>>): Promise<User> => {
     const type = config().storage.type
     if (type === 'mongodb') {
         return await userMongoDbStorage.mergeUser(userId, user)

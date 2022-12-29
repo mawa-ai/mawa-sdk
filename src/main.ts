@@ -14,4 +14,11 @@ if (logLevel) {
     setMinimumLogLevel(logLevel)
 }
 
-await initializeHttp((sourceAuthorId, message, gateway) => handleMessage(sourceAuthorId, message, gateway, directory))
+await initializeHttp(async (sourceAuthorId, message, gateway) => {
+    logger.info('Received message from ' + sourceAuthorId + ' via ' + gateway.sourceId, {
+        sourceAuthorId: sourceAuthorId,
+        message,
+        gateway: gateway.sourceId,
+    })
+    await handleMessage(sourceAuthorId, message, gateway, directory)
+})

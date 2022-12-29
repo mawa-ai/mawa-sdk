@@ -1,5 +1,5 @@
-export type RawChannelConfiguration = {
-    webhookUrl: string
+export type WebhookChannelConfiguration = {
+    url: string
     authorizationToken?: string
 }
 
@@ -9,9 +9,15 @@ export type WhatsappChannelConfiguration = {
     verifyToken: string
 }
 
+export type WebChannelConfiguration = {
+    allowedOrigins?: string[]
+    authorizationToken?: string
+}
+
 export type ChannelsConfiguration = {
-    raw?: RawChannelConfiguration
+    webhook?: WebhookChannelConfiguration
     whatsapp?: WhatsappChannelConfiguration
+    web?: WebChannelConfiguration
 }
 
 export type BotConfiguration = Record<string, unknown>

@@ -9,7 +9,7 @@ import { logger } from '../../log.ts'
 const converters = [whatsappTextConverter]
 
 export class WhatsappGateway implements Gateway {
-    public sourceId = 'whatsapp'
+    public readonly sourceId = 'whatsapp'
 
     public async receive(request: Request): Promise<SourceMessage | Response> {
         if (request.method === 'GET') {
@@ -67,7 +67,7 @@ export class WhatsappGateway implements Gateway {
         }
     }
 
-    public async send(sourceAuthorId: string, message: UnknownMessage): Promise<void> {
+    public async send(sourceUserId: string, message: UnknownMessage): Promise<void> {
         const url = `https://graph.facebook.com/v15.0/${this.config.numberId}/messages`
         const headers = new Headers({
             'Authorization': `Bearer ${this.config.token}`,
@@ -83,7 +83,7 @@ export class WhatsappGateway implements Gateway {
             body: JSON.stringify({
                 messaging_product: 'whatsapp',
                 recipient_type: 'individual',
-                to: sourceAuthorId,
+                to: sourceUserId,
                 ...whatsappMessage,
             }),
         })

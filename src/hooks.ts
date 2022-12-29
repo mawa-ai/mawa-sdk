@@ -1,11 +1,12 @@
 import { logger } from './log.ts'
+import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
 
 export const executeHook = async <THook extends (...args: Parameters<THook>) => Promise<unknown>>(
     directory: string,
     hookName: string,
     ...args: Parameters<THook>
 ): Promise<ReturnType<THook> | undefined> => {
-    const file = `${directory}/hooks.ts`
+    const file = resolve(`${directory}/hooks.ts`)
     let module
     try {
         module = await import('file:///' + file)

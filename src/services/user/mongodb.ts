@@ -6,7 +6,7 @@ type UserSchema = User & {
     _id: ObjectId
 }
 
-const mergeUser = async (userId: UserId, properties: Omit<User, 'id'>): Promise<User> => {
+const mergeUser = async (userId: UserId, properties: Partial<Omit<User, 'id'>>): Promise<User> => {
     const collection = await getCollection<UserSchema>('users')
     const entity = (await collection.findAndModify(
         { id: userId },
@@ -27,7 +27,7 @@ const mergeUser = async (userId: UserId, properties: Omit<User, 'id'>): Promise<
     const user: User & { _id?: ObjectId } = { ...entity }
     delete user._id
 
-    return user as User
+    return User.build(user)
 }
 
 const getUser = async (id: UserId): Promise<User | undefined> => {
@@ -39,7 +39,7 @@ const getUser = async (id: UserId): Promise<User | undefined> => {
         delete user._id
     }
 
-    return user as User | undefined
+    return user && User.build(user)
 }
 
 export const userMongoDbStorage = {

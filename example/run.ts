@@ -1,8 +1,8 @@
 import { readLines } from 'https://deno.land/std@0.170.0/io/mod.ts'
+import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
 
 const run = Deno.run({
-    cwd: './src',
-    cmd: ['deno', 'run', '--allow-all', '../../src/index.ts'],
+    cmd: ['deno', 'run', '--allow-all', resolve('../src/main.ts'), resolve('./src')],
     stdout: 'piped',
 })
 run.status().finally(() => {
@@ -10,7 +10,7 @@ run.status().finally(() => {
 })
 
 const sendMessage = async (message: string) => {
-    await fetch('http://localhost:3000/raw', {
+    await fetch('http://localhost:3000/webhook', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

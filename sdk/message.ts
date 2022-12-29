@@ -23,10 +23,17 @@ export type QuickReply = {
     options: string[]
 }
 
-export type MessageTypes = {
+export type Event = {
+    event: string
+    // deno-lint-ignore no-explicit-any
+    data: any
+}
+
+export interface MessageTypes {
     ['text']: PlainText
     ['menu']: Menu
     ['quick-reply']: QuickReply
+    ['event']: Event
 }
 
 export type Message<Type extends keyof MessageTypes> = {
@@ -36,6 +43,10 @@ export type Message<Type extends keyof MessageTypes> = {
 }
 
 export type UnknownMessage = Message<keyof MessageTypes>
+
+export const isMessage = (message: UnknownMessage): message is Message<keyof MessageTypes> => {
+    return typeof message?.type === 'string' && typeof message.content !== 'undefined'
+}
 
 export const isMessageOfType = <Type extends keyof MessageTypes>(
     message: UnknownMessage,

@@ -9,7 +9,13 @@ export type MessageHook = (context: Context) => Promise<true | void>
 
 /**
  * A hook that is executed when a user is created.
- * @param context The context of the user.
+ * @param context The context of the message which originated the error.
  * @param error The error that occurred.
  */
 export type ErrorHook = (context: Context, error: Error) => Promise<StateResult | void>
+
+/**
+ * A hook that is executed when an event is received from the client.
+ * @param context The context of the event.
+ */
+export type EventHook = (context: Context) => Promise<void>

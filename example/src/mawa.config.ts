@@ -1,17 +1,24 @@
 import { MawaConfiguration } from '../../sdk/config.ts'
-import 'https://deno.land/std@0.170.0/dotenv/load.ts'
+import { load } from 'https://deno.land/std@0.170.0/dotenv/mod.ts'
+import { fromFileUrl } from 'https://deno.land/std@0.170.0/path/mod.ts'
+
+await load({
+    export: true,
+    envPath: fromFileUrl(import.meta.resolve('./.env')),
+})
 
 const config: MawaConfiguration = {
     port: Number(Deno.env.get('PORT')),
     channels: {
-        raw: {
-            webhookUrl: 'http://localhost:3001',
+        webhook: {
+            url: 'http://localhost:3001',
         },
         whatsapp: {
             token: Deno.env.get('WHATSAPP_TOKEN') as string,
             numberId: Deno.env.get('WHATSAPP_NUMBER_ID') as string,
             verifyToken: Deno.env.get('WHATSAPP_VERIFY_TOKEN') as string,
         },
+        web: {},
     },
     storage: {
         type: 'memory',
