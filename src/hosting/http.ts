@@ -1,7 +1,8 @@
-import { config } from '../config.ts'
+import { config, initializeConfiguration } from '../config.ts'
 import { MessageHandler } from '../gateways/gateway.ts'
 import { resolveGateway } from '../gateways/gateways.ts'
-import { logger } from '../log.ts'
+import { logger, setMinimumLogLevel } from '../log.ts'
+import { handleMessage } from '../state.ts'
 
 const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler) => {
     const httpConn = Deno.serveHttp(conn)
@@ -22,7 +23,7 @@ const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler)
     }
 }
 
-export const initializeHttp = async (onMessage: MessageHandler) => {
+const initializeHttp = async (onMessage: MessageHandler) => {
     const port = config().port
     if (!port) {
         throw new Error('Port not defined')
@@ -36,4 +37,23 @@ export const initializeHttp = async (onMessage: MessageHandler) => {
         // without awaiting the function
         handlerHttpConnection(conn, onMessage)
     }
+}
+
+export const start = async (directory: string) => {
+    await initializeConfiguration(directory, true)
+    logger.info('Configuration loaded')
+
+    const logLevel = config().logLevel
+    if (logLevel) {
+        setMinimumLogLevel(logLevel)
+    }
+
+    await initializeHttp(async (sourceAuthorId, message, gateway) => {
+        logger.info('Received message from ' + sourceAuthorId + ' via ' + gateway.sourceId, {
+            sourceAuthorId: sourceAuthorId,
+            message,
+            gateway: gateway.sourceId,
+        })
+        await handleMessage(sourceAuthorId, message, gateway, directory)
+    })
 }

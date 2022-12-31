@@ -25,8 +25,7 @@ export type QuickReply = {
 
 export type Event = {
     event: string
-    // deno-lint-ignore no-explicit-any
-    data: any
+    data: unknown
 }
 
 export interface MessageTypes {

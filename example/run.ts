@@ -1,13 +1,8 @@
 import { readLines } from 'https://deno.land/std@0.170.0/io/mod.ts'
-import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
+import { fromFileUrl } from 'https://deno.land/std@0.170.0/path/mod.ts'
+import { start } from '../src/hosting/http.ts'
 
-const run = Deno.run({
-    cmd: ['deno', 'run', '--allow-all', resolve('../src/main.ts'), resolve('./src')],
-    stdout: 'piped',
-})
-run.status().finally(() => {
-    Deno.exit(1)
-})
+start(fromFileUrl(import.meta.resolve('./src')))
 
 const sendMessage = async (message: string) => {
     await fetch('http://localhost:3000/webhook', {
