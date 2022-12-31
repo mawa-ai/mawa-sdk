@@ -15,20 +15,13 @@ export class WebGateway implements Gateway {
         const customAction = url.searchParams.get('action')
 
         if (request.method === 'OPTIONS') {
-            const response = new Response()
-            response.headers.set(
-                'Access-Control-Allow-Origin',
-                this.config.allowedOrigins ? this.config.allowedOrigins.join(',') : '*',
-            )
-            response.headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-            response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-            return response
+            return new Response(undefined, { headers: this.getCorsHeaders(request, true) })
         } else if (request.method === 'GET' && customAction === 'auth') {
             if (
                 this.config.authorizationToken &&
                 this.config.authorizationToken !== request.headers.get('Authorization')
             ) {
-                return new Response('Unauthorized', { status: 401 })
+                return new Response('Unauthorized', { status: 401, headers: this.getCorsHeaders(request) })
             }
 
             const sourceId = crypto.randomUUID()
@@ -36,35 +29,32 @@ export class WebGateway implements Gateway {
             const password = crypto.randomUUID()
 
             await setKv(userId, '#web-password', password)
-            const response = Response.json({
-                user: sourceId,
-                password: password,
-            })
-
-            response.headers.set(
-                'Access-Control-Allow-Origin',
-                this.config.allowedOrigins ? this.config.allowedOrigins.join(',') : '*',
+            return Response.json(
+                {
+                    user: sourceId,
+                    password: password,
+                },
+                { headers: this.getCorsHeaders(request) },
             )
-            return response
         }
     }
 
     public async handle(request: Request, onMessage: MessageHandler): Promise<Response> {
         const auth = request.headers.get('Authorization')
         if (!auth) {
-            return new Response('Unauthorized', { status: 401 })
+            return new Response('Unauthorized', { status: 401, headers: this.getCorsHeaders(request) })
         }
 
         const [type, token] = auth.split(' ')
         if (type !== 'Basic') {
-            return new Response('Unauthorized', { status: 401 })
+            return new Response('Unauthorized', { status: 401, headers: this.getCorsHeaders(request) })
         }
 
         const [sourceId, password] = atob(token).split(':')
         const userId = User.getIdFromSourceId(sourceId, this.sourceId)
         const storedPassword = await getKv(userId, '#web-password')
         if (password !== storedPassword) {
-            return new Response('Unauthorized', { status: 401 })
+            return new Response('Unauthorized', { status: 401, headers: this.getCorsHeaders(request) })
         }
 
         this.activeConnections.set(sourceId, [])
@@ -72,17 +62,11 @@ export class WebGateway implements Gateway {
         try {
             const message = await request.json()
             if (!isMessage(message)) {
-                return new Response('Invalid message', { status: 400 })
+                return new Response('Invalid message', { status: 400, headers: this.getCorsHeaders(request) })
             }
 
             await onMessage(sourceId, message, this)
-            const response = Response.json(this.activeConnections.get(sourceId))
-
-            response.headers.set(
-                'Access-Control-Allow-Origin',
-                this.config.allowedOrigins ? this.config.allowedOrigins.join(',') : '*',
-            )
-            return response
+            return Response.json(this.activeConnections.get(sourceId), { headers: this.getCorsHeaders(request) })
         } finally {
             this.activeConnections.delete(sourceId)
         }
@@ -94,6 +78,30 @@ export class WebGateway implements Gateway {
             messages.push(message)
         }
         return Promise.resolve()
+    }
+
+    private getCorsHeaders(request: Request, preflight = false): Headers {
+        const headers = new Headers()
+        const origin = request.headers.get('Origin')
+        if (origin && this.config.allowedOrigins) {
+            for (const allowedOrigin of this.config.allowedOrigins) {
+                if (typeof allowedOrigin === 'string' && allowedOrigin === origin) {
+                    headers.set('Access-Control-Allow-Origin', origin)
+                    break
+                } else if (allowedOrigin instanceof RegExp && allowedOrigin.test(origin)) {
+                    headers.set('Access-Control-Allow-Origin', origin)
+                    break
+                }
+            }
+        } else {
+            headers.set('Access-Control-Allow-Origin', '*')
+        }
+
+        if (preflight) {
+            headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+            headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        }
+        return headers
     }
 
     private get config(): WebChannelConfiguration {

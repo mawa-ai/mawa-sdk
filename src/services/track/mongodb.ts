@@ -6,19 +6,17 @@ type EventTrackingSchema = {
     _id: ObjectId
     userId: UserId
     event: string
-    properties: Record<string, unknown>
+    properties?: Record<string, unknown>
+    createdAt: Date
 }
 
-const track = async (
-    userId: UserId,
-    event: string,
-    properties: Record<string, unknown>,
-): Promise<void> => {
+const track = async (userId: UserId, event: string, properties?: Record<string, unknown>): Promise<void> => {
     const collection = await getCollection<EventTrackingSchema>('events')
     await collection.insertOne({
         userId,
         event,
         properties,
+        createdAt: new Date(),
     })
 }
 

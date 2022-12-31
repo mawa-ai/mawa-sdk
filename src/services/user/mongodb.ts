@@ -4,6 +4,8 @@ import { getCollection } from '../mongodb.ts'
 
 type UserSchema = User & {
     _id: ObjectId
+    createdAt: Date
+    updatedAt: Date
 }
 
 const mergeUser = async (userId: UserId, properties: Partial<Omit<User, 'id'>>): Promise<User> => {
@@ -17,6 +19,10 @@ const mergeUser = async (userId: UserId, properties: Partial<Omit<User, 'id'>>):
                     metadata: {
                         $mergeObjects: ['$user.metadata', properties.metadata],
                     },
+                    updatedAt: new Date(),
+                } as Document,
+                $setOnInsert: {
+                    createdAt: new Date(),
                 } as Document,
             },
             new: true,

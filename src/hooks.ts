@@ -1,11 +1,12 @@
 import { logger } from './log.ts'
 import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
+import { Hooks } from '../sdk/hooks.ts'
 
-export const executeHook = async <THook extends (...args: Parameters<THook>) => Promise<unknown>>(
+export const executeHook = async <THook extends keyof Hooks>(
     directory: string,
-    hookName: string,
-    ...args: Parameters<THook>
-): Promise<ReturnType<THook> | undefined> => {
+    hookName: THook,
+    ...args: Parameters<Hooks[THook]>
+): Promise<ReturnType<Hooks[THook]> | undefined> => {
     const file = resolve(`${directory}/hooks.ts`)
     let module
     try {

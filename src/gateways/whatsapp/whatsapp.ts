@@ -1,13 +1,20 @@
 import { WhatsappChannelConfiguration } from '../../../sdk/config.ts'
-import { isMessageOfType, UnknownMessage } from '../../../sdk/message.ts'
+import { isMessageOfType, MessageTypes, UnknownMessage } from '../../../sdk/message.ts'
 import { config } from '../../config.ts'
 import { Gateway, SourceMessage } from '../gateway.ts'
 import { whatsappTextConverter } from './converters/text.ts'
 import { logger } from '../../log.ts'
 import { User } from '../../../sdk/user.ts'
 import { mergeUser } from '../../services/user/user.ts'
+import { whatsappQuickReplyConverter } from './converters/quickReply.ts'
+import { whatsappMenuConverter } from './converters/menu.ts'
+import { Converter } from '../converter.ts'
 
-const converters = [whatsappTextConverter]
+const converters: Converter<keyof MessageTypes>[] = [
+    whatsappTextConverter,
+    whatsappQuickReplyConverter,
+    whatsappMenuConverter,
+]
 
 export class WhatsappGateway implements Gateway {
     public readonly sourceId = 'whatsapp'
@@ -107,7 +114,7 @@ export class WhatsappGateway implements Gateway {
 
     private convertToWhatsappMessage(message: UnknownMessage): unknown {
         for (const converter of converters) {
-            if (isMessageOfType(message, converter.type)) {
+            if (converter.convertToSourceMessage && isMessageOfType(message, converter.type)) {
                 return converter.convertToSourceMessage(message.content)
             }
         }
@@ -117,7 +124,7 @@ export class WhatsappGateway implements Gateway {
 
     private convertFromWhatsappMessage(message: unknown): UnknownMessage | undefined {
         for (const converter of converters) {
-            if (converter.isSourceConverter(message)) {
+            if (converter.convertFromSourceMessage && converter.isSourceConverter?.(message)) {
                 return {
                     type: converter.type,
                     content: converter.convertFromSourceMessage(message),

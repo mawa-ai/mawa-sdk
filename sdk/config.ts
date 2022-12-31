@@ -1,7 +1,9 @@
+export type HttpHostingConfiguration = {
+    port: number
+}
+
 export type HostingConfiguration = {
-    http?: {
-        port: number
-    }
+    http?: HttpHostingConfiguration
 }
 
 export type WebhookChannelConfiguration = {
@@ -16,7 +18,7 @@ export type WhatsappChannelConfiguration = {
 }
 
 export type WebChannelConfiguration = {
-    allowedOrigins?: string[]
+    allowedOrigins?: (string | RegExp)[]
     authorizationToken?: string
 }
 
@@ -30,7 +32,6 @@ export type BotConfiguration = Record<string, unknown>
 
 export type MongoDbConfiguration = {
     url: string
-    database: string
 }
 
 export type StorageConfiguration =

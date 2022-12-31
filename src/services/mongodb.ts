@@ -8,8 +8,7 @@ export const getCollection = async <T>(collection: string): Promise<Collection<T
 
     if (!database) {
         const client = new MongoClient()
-        await client.connect(storageConfig.config.url)
-        database = client.database(storageConfig.config.database)
+        database = await client.connect(storageConfig.config.url)
     }
     return database.collection<T>(collection)
 }

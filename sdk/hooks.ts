@@ -1,4 +1,4 @@
-import { Context, StateResult } from './state.ts'
+import { Context, KnownContext, StateResult } from './state.ts'
 
 /**
  * A hook that is executed when a message is received.
@@ -18,4 +18,10 @@ export type ErrorHook = (context: Context, error: Error) => Promise<StateResult 
  * A hook that is executed when an event is received from the client.
  * @param context The context of the event.
  */
-export type EventHook = (context: Context) => Promise<void>
+export type EventHook = (context: KnownContext<'event'>) => Promise<StateResult | void>
+
+export type Hooks = {
+    event: EventHook
+    message: MessageHook
+    error: ErrorHook
+}

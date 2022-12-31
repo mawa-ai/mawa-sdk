@@ -8,8 +8,12 @@ export const whatsappTextConverter: Converter<'text'> = {
             body: content,
         },
     }),
-    convertFromSourceMessage: (sourceMessage: { text: { body: string } }) => {
-        return sourceMessage.text.body
+    convertFromSourceMessage: ({ type, text, interactive }) => {
+        if (type === 'text') {
+            return text.body
+        } else if (type === 'interactive') {
+            return interactive.button_reply?.title || interactive.list_reply?.title
+        }
     },
-    isSourceConverter: (sourceMessage) => (sourceMessage as { type: string }).type === 'text',
+    isSourceConverter: ({ type }) => type === 'text' || type === 'interactive',
 }

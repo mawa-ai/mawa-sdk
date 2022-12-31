@@ -9,6 +9,8 @@ const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler)
     try {
         for await (const requestEvent of httpConn) {
             try {
+                logger.debug('Received request', { url: requestEvent.request.url })
+
                 const response = await resolveGateway(requestEvent.request, onMessage)
                 await requestEvent.respondWith(response)
             } catch (err) {

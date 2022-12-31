@@ -7,6 +7,7 @@ type VariableSchema = {
     userId: UserId
     key: string
     value: unknown
+    createdAt: Date
 }
 
 const setKv = async <T>(userId: UserId, key: string, value: T): Promise<void> => {
@@ -15,7 +16,10 @@ const setKv = async <T>(userId: UserId, key: string, value: T): Promise<void> =>
         { userId, key },
         {
             $set: {
-                value,
+                value: typeof value === 'undefined' ? null : value,
+            },
+            $setOnInsert: {
+                createdAt: new Date(),
             },
         },
         { upsert: true },
@@ -28,7 +32,8 @@ const getKv = async <T>(userId: UserId, key: string): Promise<T | undefined> => 
         userId,
         key,
     })
-    return entity && (entity.value as T)
+    const value = entity && (entity.value as T)
+    return value === null ? undefined : value
 }
 
 export const varsMongoDbStorage = {
