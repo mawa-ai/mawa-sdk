@@ -14,7 +14,16 @@ export class WebGateway implements Gateway {
         const url = new URL(request.url)
         const customAction = url.searchParams.get('action')
 
-        if (request.method === 'GET' && customAction === 'auth') {
+        if (request.method === 'OPTIONS') {
+            const response = new Response()
+            response.headers.set(
+                'Access-Control-Allow-Origin',
+                this.config.allowedOrigins ? this.config.allowedOrigins.join(',') : '*',
+            )
+            response.headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+            response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+            return response
+        } else if (request.method === 'GET' && customAction === 'auth') {
             if (
                 this.config.authorizationToken &&
                 this.config.authorizationToken !== request.headers.get('Authorization')
@@ -67,7 +76,13 @@ export class WebGateway implements Gateway {
             }
 
             await onMessage(sourceId, message, this)
-            return Response.json(this.activeConnections.get(sourceId))
+            const response = Response.json(this.activeConnections.get(sourceId))
+
+            response.headers.set(
+                'Access-Control-Allow-Origin',
+                this.config.allowedOrigins ? this.config.allowedOrigins.join(',') : '*',
+            )
+            return response
         } finally {
             this.activeConnections.delete(sourceId)
         }
