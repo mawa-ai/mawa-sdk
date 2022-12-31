@@ -19,4 +19,12 @@ export class User {
         }
         return Object.assign(new User(id), user)
     }
+
+    public getSourceId(): string {
+        return this.id.split(':')[0]
+    }
+
+    public static getIdFromSourceId(sourceUserId: string, sourceId: string): UserId {
+        return `${sourceId}:${encodeURIComponent(sourceUserId)}`
+    }
 }

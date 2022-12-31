@@ -2,8 +2,8 @@ import { isMessage, UnknownMessage } from '../../../sdk/message.ts'
 import { Gateway, MessageHandler } from '../gateway.ts'
 import { config } from '../../config.ts'
 import { WebChannelConfiguration } from '../../../sdk/config.ts'
-import { getIdFromSourceId } from '../../services/user/user.ts'
 import { getKv, setKv } from '../../services/vars/vars.ts'
+import { User } from '../../../sdk/user.ts'
 
 export class WebGateway implements Gateway {
     public readonly sourceId = 'web'
@@ -32,7 +32,7 @@ export class WebGateway implements Gateway {
             }
 
             const sourceId = crypto.randomUUID()
-            const userId = getIdFromSourceId(sourceId, this.sourceId)
+            const userId = User.getIdFromSourceId(sourceId, this.sourceId)
             const password = crypto.randomUUID()
 
             await setKv(userId, '#web-password', password)
@@ -61,7 +61,7 @@ export class WebGateway implements Gateway {
         }
 
         const [sourceId, password] = atob(token).split(':')
-        const userId = getIdFromSourceId(sourceId, this.sourceId)
+        const userId = User.getIdFromSourceId(sourceId, this.sourceId)
         const storedPassword = await getKv(userId, '#web-password')
         if (password !== storedPassword) {
             return new Response('Unauthorized', { status: 401 })

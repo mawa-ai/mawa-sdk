@@ -24,7 +24,7 @@ const mergeUser = async (userId: UserId, properties: Partial<Omit<User, 'id'>>):
         },
     )) as UserSchema
 
-    const user: User & { _id?: ObjectId } = { ...entity }
+    const user: Partial<User> & { _id?: ObjectId } = { ...entity }
     delete user._id
 
     return User.build(user)
@@ -34,7 +34,7 @@ const getUser = async (id: UserId): Promise<User | undefined> => {
     const collection = await getCollection<UserSchema>('users')
     const entity = await collection.findOne({ id })
 
-    const user: (User & { _id?: ObjectId }) | undefined = entity && { ...entity }
+    const user: (Partial<User> & { _id?: ObjectId }) | undefined = entity && { ...entity }
     if (user) {
         delete user._id
     }

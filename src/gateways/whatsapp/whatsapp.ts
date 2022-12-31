@@ -3,8 +3,9 @@ import { isMessageOfType, UnknownMessage } from '../../../sdk/message.ts'
 import { config } from '../../config.ts'
 import { Gateway, SourceMessage } from '../gateway.ts'
 import { whatsappTextConverter } from './converters/text.ts'
-import { getIdFromSourceId, mergeUser } from '../../services/user/user.ts'
 import { logger } from '../../log.ts'
+import { User } from '../../../sdk/user.ts'
+import { mergeUser } from '../../services/user/user.ts'
 
 const converters = [whatsappTextConverter]
 
@@ -55,7 +56,7 @@ export class WhatsappGateway implements Gateway {
                 return new Response()
             }
 
-            const userId = getIdFromSourceId(waid, this.sourceId)
+            const userId = User.getIdFromSourceId(waid, this.sourceId)
             await mergeUser(userId, { name, phoneNumber: waid })
 
             return {

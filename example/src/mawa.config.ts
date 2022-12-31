@@ -8,7 +8,12 @@ await load({
 })
 
 const config: MawaConfiguration = {
-    port: Number(Deno.env.get('PORT')),
+    hosting: {
+        http: {
+            port: Number(Deno.env.get('PORT')),
+        },
+    },
+    logLevel: 'WARNING',
     channels: {
         webhook: {
             url: 'http://localhost:3001',

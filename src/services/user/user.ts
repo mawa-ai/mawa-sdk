@@ -24,7 +24,3 @@ export const getUser = async (id: UserId): Promise<User | undefined> => {
         throw new Error(`Unknown storage type: ${type}`)
     }
 }
-
-export const getIdFromSourceId = (sourceUserId: string, sourceId: string): UserId => {
-    return `${sourceId}:${encodeURIComponent(sourceUserId)}`
-}

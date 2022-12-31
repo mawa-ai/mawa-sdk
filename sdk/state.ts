@@ -4,7 +4,7 @@ import { BotConfiguration } from './config.ts'
 
 export type Context = {
     send: <Type extends keyof MessageTypes>(message: Message<Type> | string) => Promise<void>
-    mergeUser: (user: Omit<User, 'id'>) => Promise<void>
+    mergeUser: (user: Omit<Partial<User>, 'id'>) => Promise<void>
     setKv: (key: string, value: unknown) => Promise<void>
     getKv: (key: string) => Promise<unknown>
     message: UnknownMessage

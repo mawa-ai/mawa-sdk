@@ -24,9 +24,9 @@ const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler)
 }
 
 const initializeHttp = async (onMessage: MessageHandler) => {
-    const port = config().port
+    const port = config().hosting.http?.port
     if (!port) {
-        throw new Error('Port not defined')
+        throw new Error('HTTP listen port not defined')
     }
 
     const server = Deno.listen({ port })
@@ -41,7 +41,6 @@ const initializeHttp = async (onMessage: MessageHandler) => {
 
 export const start = async (directory: string) => {
     await initializeConfiguration(directory, true)
-    logger.info('Configuration loaded')
 
     const logLevel = config().logLevel
     if (logLevel) {

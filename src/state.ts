@@ -2,12 +2,13 @@ import { Context, StateResult } from '../sdk/state.ts'
 import { isMessageOfType, Message, UnknownMessage } from '../sdk/message.ts'
 import { Gateway } from './gateways/gateway.ts'
 import { getKv, setKv } from './services/vars/vars.ts'
-import { getIdFromSourceId, getUser, mergeUser } from './services/user/user.ts'
+import { getUser, mergeUser } from './services/user/user.ts'
 import { executeHook } from './hooks.ts'
 import { ErrorHook, EventHook, MessageHook } from '../sdk/hooks.ts'
 import { config } from './config.ts'
 import { logger } from './log.ts'
 import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
+import { User } from '../sdk/user.ts'
 
 const sendMessage = async (sourceUserId: string, messageOrText: UnknownMessage | string, gateway: Gateway) => {
     const message =
@@ -24,7 +25,7 @@ export const handleMessage = async (
     directory: string,
     iterations = 0,
 ) => {
-    const userId = getIdFromSourceId(sourceAuthorId, gateway.sourceId)
+    const userId = User.getIdFromSourceId(sourceAuthorId, gateway.sourceId)
     if (iterations > 10) {
         throw new Error(`Too many iterations for user '${userId}'`)
     }
@@ -47,9 +48,11 @@ export const handleMessage = async (
         if (isMessageOfType(message, 'event')) {
             await executeHook<EventHook>(directory, 'event', context)
         } else {
-            const hookResult = await executeHook<MessageHook>(directory, 'message', context)
-            if (hookResult === true) {
-                return
+            if (iterations === 0) {
+                const hookResult = await executeHook<MessageHook>(directory, 'message', context)
+                if (hookResult === true) {
+                    return
+                }
             }
 
             const currentState = (await getKv<string>(user.id, '#state')) || 'start'
@@ -60,13 +63,14 @@ export const handleMessage = async (
                 state: currentState,
             })
 
-            const file = resolve(`${directory}/flow/${currentState}.ts`)
+            const [filename, action] = currentState.split('.')
+            const file = resolve(`${directory}/flow/${filename}.ts`)
             const module = await import('file:///' + file)
 
-            const result = await module.default(context)
+            const result = await module[action || 'default'](context)
             const stateResult: StateResult = result || {}
             await setKv(user.id, '#last-state', currentState)
-            await setKv(user.id, '#state', stateResult.next || 'default')
+            await setKv(user.id, '#state', stateResult.next || 'start')
 
             if (!stateResult.input) {
                 await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1)

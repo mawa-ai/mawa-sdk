@@ -1,3 +1,9 @@
+export type HostingConfiguration = {
+    http?: {
+        port: number
+    }
+}
+
 export type WebhookChannelConfiguration = {
     url: string
     authorizationToken?: string
@@ -37,7 +43,7 @@ export type StorageConfiguration =
       }
 
 export type MawaConfiguration = {
-    port: number
+    hosting: HostingConfiguration
     channels: ChannelsConfiguration
     storage: StorageConfiguration
     logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
