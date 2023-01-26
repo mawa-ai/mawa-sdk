@@ -25,7 +25,6 @@ export const setMinimumLogLevel = (level: log.LevelName) => {
     })
 }
 
-setMinimumLogLevel('INFO')
 export const logger = {
     debug: log.debug,
     info: log.info,

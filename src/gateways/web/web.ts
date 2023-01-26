@@ -82,13 +82,18 @@ export class WebGateway implements Gateway {
 
     private getCorsHeaders(request: Request, preflight = false): Headers {
         const headers = new Headers()
+
         const origin = request.headers.get('Origin')
+        if (!origin && !preflight) {
+            return headers
+        }
+
         if (origin && this.config.allowedOrigins) {
             for (const allowedOrigin of this.config.allowedOrigins) {
-                if (typeof allowedOrigin === 'string' && allowedOrigin === origin) {
-                    headers.set('Access-Control-Allow-Origin', origin)
-                    break
-                } else if (allowedOrigin instanceof RegExp && allowedOrigin.test(origin)) {
+                if (
+                    (typeof allowedOrigin === 'string' && allowedOrigin === origin) ||
+                    (allowedOrigin instanceof RegExp && allowedOrigin.test(origin))
+                ) {
                     headers.set('Access-Control-Allow-Origin', origin)
                     break
                 }
@@ -101,6 +106,7 @@ export class WebGateway implements Gateway {
             headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
             headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         }
+
         return headers
     }
 
