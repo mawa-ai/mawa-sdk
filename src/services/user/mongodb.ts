@@ -17,7 +17,7 @@ const mergeUser = async (userId: UserId, properties: Partial<Omit<User, 'id'>>):
                 $set: {
                     ...properties,
                     metadata: {
-                        $mergeObjects: ['$user.metadata', properties.metadata],
+                        $mergeObjects: ['$metadata', properties.metadata],
                     },
                     updatedAt: new Date(),
                 } as Document,
