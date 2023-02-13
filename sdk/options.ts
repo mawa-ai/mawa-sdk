@@ -27,7 +27,7 @@ export class Options {
      * @param text The text to be sent with the menu
      * @returns The message to be sent
      */
-    public getMenu(text: string): Message<'menu'> | Message<'quick-reply'> | Message<'text'> {
+    public getMenu(text: string, button: string): Message<'menu'> | Message<'quick-reply'> | Message<'text'> {
         if (this.options.length <= 3 && this.options.every((option) => option.text.length <= 20)) {
             return {
                 type: 'quick-reply',
@@ -41,6 +41,7 @@ export class Options {
                 type: 'menu',
                 content: {
                     text,
+                    button,
                     sections: [
                         {
                             options: this.options.map((option) => option.text),

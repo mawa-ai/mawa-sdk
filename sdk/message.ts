@@ -14,7 +14,7 @@ export type Section = {
 
 export type Menu = {
     text: string
-    button?: string
+    button: string
     sections: Section[]
 }
 

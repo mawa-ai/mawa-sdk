@@ -1,7 +1,7 @@
 import { config, initializeConfiguration } from '../config.ts'
 import { MessageHandler } from '../gateways/gateway.ts'
 import { resolveGateway } from '../gateways/gateways.ts'
-import { logger, setMinimumLogLevel } from '../log.ts'
+import { logger, setup } from '../log.ts'
 import { handleMessage } from '../state.ts'
 
 const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler) => {
@@ -46,7 +46,7 @@ export const start = async (directory: string) => {
 
     const logLevel = config().logLevel
     if (logLevel) {
-        setMinimumLogLevel(logLevel)
+        setup(logLevel)
     }
 
     await initializeHttp(async (sourceAuthorId, message, gateway) => {

@@ -1,7 +1,7 @@
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'https://deno.land/x/lambda@1.29.1/mod.ts'
 import { config, initializeConfiguration } from '../config.ts'
 import { resolveGateway } from '../gateways/gateways.ts'
-import { logger, setMinimumLogLevel } from '../log.ts'
+import { logger, setup } from '../log.ts'
 import { handleMessage } from '../state.ts'
 
 export const getHandler = async (
@@ -11,7 +11,7 @@ export const getHandler = async (
     await initializeConfiguration(directory, false)
     const logLevel = config().logLevel
     if (logLevel) {
-        setMinimumLogLevel(logLevel)
+        setup(logLevel)
     }
 
     return async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
