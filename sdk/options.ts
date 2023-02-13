@@ -7,15 +7,16 @@ type Option = {
 }
 
 export class Options {
-    private readonly options: Option[]
+    private readonly options: (Option & { originalText: string })[]
 
     constructor(options: (Option | string)[]) {
         this.options = options.map((option) => {
             if (typeof option === 'string') {
-                return { text: option.toLowerCase(), synonyms: [] }
+                return { text: option.toLowerCase(), originalText: option, synonyms: [] }
             } else {
                 return {
                     text: option.text.toLowerCase(),
+                    originalText: option.text,
                     synonyms: option.synonyms.map((synonym) => synonym.toLowerCase()),
                 }
             }
@@ -57,9 +58,9 @@ export class Options {
 
     /**
      * @param message The input message to be matched
-     * @returns The index of the option selected or -1 if none was found
+     * @returns The selected option, or undefined if no option was selected
      */
-    public getSelectedOption(message: UnknownMessage): number | undefined {
+    public getSelectedOption(message: UnknownMessage): { text: string; index: number } | undefined {
         if (!isMessageOfType(message, 'text')) {
             return undefined
         }
@@ -94,7 +95,7 @@ export class Options {
         }
 
         if (index > 0 && index <= this.options.length) {
-            return index - 1
+            return { text: this.options[index - 1].originalText, index: index - 1 }
         }
 
         const createSpace = (str: string) => ` ${str} `
@@ -106,10 +107,11 @@ export class Options {
         )
 
         if (option !== -1) {
-            return option
+            return { text: this.options[option].originalText, index: option }
         }
 
         const similarities = this.options.map((option, index) => ({
+            option,
             index,
             similarity: findBestMatch(input, [option.text, ...option.synonyms]).bestMatch.rating,
         }))
@@ -118,9 +120,9 @@ export class Options {
             current.similarity > best.similarity ? current : best,
         )
         if (bestSimilarity.similarity > 0.6) {
-            return bestSimilarity.index
+            return { text: bestSimilarity.option.originalText, index: bestSimilarity.index }
         }
 
-        return -1
+        return undefined
     }
 }
