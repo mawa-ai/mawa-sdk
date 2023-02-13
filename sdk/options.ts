@@ -1,4 +1,4 @@
-import { Message } from './message.ts'
+import { isMessageOfType, Message, UnknownMessage } from './message.ts'
 import { findBestMatch } from 'https://deno.land/x/string_similarity@v1.0.1/mod.ts'
 
 type Option = {
@@ -7,8 +7,25 @@ type Option = {
 }
 
 export class Options {
-    constructor(private readonly options: Option[]) {}
+    private readonly options: Option[]
 
+    constructor(options: (Option | string)[]) {
+        this.options = options.map((option) => {
+            if (typeof option === 'string') {
+                return { text: option.toLowerCase(), synonyms: [] }
+            } else {
+                return {
+                    text: option.text.toLowerCase(),
+                    synonyms: option.synonyms.map((synonym) => synonym.toLowerCase()),
+                }
+            }
+        })
+    }
+
+    /**
+     * @param text The text to be sent with the menu
+     * @returns The message to be sent
+     */
     public getMenu(text: string): Message<'menu'> | Message<'quick-reply'> | Message<'text'> {
         if (this.options.length <= 3 && this.options.every((option) => option.text.length <= 20)) {
             return {
@@ -38,7 +55,17 @@ export class Options {
         }
     }
 
-    public getSelectedOption(input: string): number {
+    /**
+     * @param message The input message to be matched
+     * @returns The index of the option selected or -1 if none was found
+     */
+    public getSelectedOption(message: UnknownMessage): number | undefined {
+        if (!isMessageOfType(message, 'text')) {
+            return undefined
+        }
+
+        const input = message.content.toLowerCase().trim()
+
         let index = -1
         if (input.match(/primeir[oa]/g)) {
             index = 1

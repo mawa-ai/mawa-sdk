@@ -1,4 +1,4 @@
-import { MawaConfiguration } from '../../sdk/config.ts'
+import { Configuration } from '../../sdk/config.ts'
 import { load } from 'https://deno.land/std@0.170.0/dotenv/mod.ts'
 import { fromFileUrl } from 'https://deno.land/std@0.170.0/path/mod.ts'
 
@@ -7,7 +7,7 @@ await load({
     envPath: fromFileUrl(import.meta.resolve('./.env')),
 })
 
-const config: MawaConfiguration = {
+const config: Configuration = {
     hosting: {
         http: {
             port: Number(Deno.env.get('PORT')),

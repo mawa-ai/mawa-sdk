@@ -43,7 +43,7 @@ export type StorageConfiguration =
           config: MongoDbConfiguration
       }
 
-export type MawaConfiguration = {
+export type Configuration = {
     hosting: HostingConfiguration
     channels: ChannelsConfiguration
     storage: StorageConfiguration
