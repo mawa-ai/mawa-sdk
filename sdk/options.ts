@@ -33,7 +33,7 @@ export class Options {
                 type: 'quick-reply',
                 content: {
                     text,
-                    options: this.options.map((option) => option.text),
+                    options: this.options.map((option) => option.originalText),
                 },
             }
         } else if (this.options.length <= 10) {
@@ -44,7 +44,7 @@ export class Options {
                     button,
                     sections: [
                         {
-                            options: this.options.map((option) => option.text),
+                            options: this.options.map((option) => option.originalText),
                         },
                     ],
                 },
@@ -52,7 +52,9 @@ export class Options {
         } else {
             return {
                 type: 'text',
-                content: `${text}\n\n${this.options.map((option, i) => `${i + 1} - ${option.text}`).join('\n')}`,
+                content: `${text}\n\n${this.options
+                    .map((option, i) => `${i + 1} - ${option.originalText}`)
+                    .join('\n')}`,
             }
         }
     }
