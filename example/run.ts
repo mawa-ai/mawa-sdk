@@ -2,7 +2,7 @@ import { readLines } from 'https://deno.land/std@0.170.0/io/mod.ts'
 import { fromFileUrl } from 'https://deno.land/std@0.170.0/path/mod.ts'
 import { start } from '../src/hosting/http.ts'
 
-start(fromFileUrl(import.meta.resolve('./src')))
+start(fromFileUrl(import.meta.resolve('./src')), 3000)
 
 const sendMessage = async (message: string) => {
     await fetch('http://localhost:3000/webhook', {

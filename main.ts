@@ -1,4 +1,4 @@
-import { logger } from './src/log.ts'
+import { logger } from './mod.ts'
 import { start } from './src/hosting/http.ts'
 
 const directory = Deno.args[0] || Deno.cwd()

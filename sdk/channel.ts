@@ -1,13 +1,13 @@
-import { UnknownMessage } from '../../sdk/message.ts'
+import { UnknownMessage } from './message.ts'
 
-export type MessageHandler = (gatewayAuthorId: string, message: UnknownMessage, gateway: Gateway) => Promise<void>
+export type MessageHandler = (channelAuthorId: string, message: UnknownMessage, channel: Channel) => Promise<void>
 
 export type SourceMessage = {
     sourceAuthorId: string
     message: UnknownMessage
 }
 
-export interface Gateway {
+export interface Channel {
     readonly sourceId: string
     receive: (request: Request) => Promise<SourceMessage | Response | void>
     handle?: (request: Request, messageHandler: MessageHandler) => Promise<Response>

@@ -1,5 +1,4 @@
-import { isMessageOfType } from '../../../sdk/message.ts'
-import { Context, StateResult } from '../../../sdk/state.ts'
+import { isMessageOfType, Context, StateResult } from '../../../mod.ts'
 
 export default async function (context: Context): Promise<StateResult> {
     if (isMessageOfType(context.message, 'text')) {

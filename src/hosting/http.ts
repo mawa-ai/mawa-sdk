@@ -1,7 +1,6 @@
-import { config, initializeConfiguration } from '../config.ts'
-import { MessageHandler } from '../gateways/gateway.ts'
-import { resolveGateway } from '../gateways/gateways.ts'
-import { logger, setup } from '../log.ts'
+import { MessageHandler, config, logger, setupLogger } from '../../mod.ts'
+import { resolveChannel } from '../channel/channel.ts'
+import { initializeConfiguration } from '../config.ts'
 import { handleMessage } from '../state.ts'
 
 const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler) => {
@@ -11,7 +10,7 @@ const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler)
             try {
                 logger.debug('Received request', { url: requestEvent.request.url })
 
-                const response = await resolveGateway(requestEvent.request, onMessage)
+                const response = await resolveChannel(requestEvent.request, onMessage)
                 await requestEvent.respondWith(response)
             } catch (err) {
                 logger.error(err)
@@ -25,12 +24,7 @@ const handlerHttpConnection = async (conn: Deno.Conn, onMessage: MessageHandler)
     }
 }
 
-const initializeHttp = async (onMessage: MessageHandler) => {
-    const port = config().hosting.http?.port
-    if (!port) {
-        throw new Error('HTTP listen port not defined')
-    }
-
+const initializeHttp = async (port: number, onMessage: MessageHandler) => {
     const server = Deno.listen({ port })
     logger.info(`Listening on port ${port}`)
 
@@ -41,20 +35,20 @@ const initializeHttp = async (onMessage: MessageHandler) => {
     }
 }
 
-export const start = async (directory: string) => {
+export const start = async (directory: string, port = 5501) => {
     await initializeConfiguration(directory, true)
 
     const logLevel = config().logLevel
     if (logLevel) {
-        setup(logLevel)
+        setupLogger(logLevel)
     }
 
-    await initializeHttp(async (sourceAuthorId, message, gateway) => {
-        logger.info('Received message from ' + sourceAuthorId + ' via ' + gateway.sourceId, {
+    await initializeHttp(port, async (sourceAuthorId, message, channel) => {
+        logger.info('Received message from ' + sourceAuthorId + ' via ' + channel.sourceId, {
             sourceAuthorId: sourceAuthorId,
             message,
-            gateway: gateway.sourceId,
+            channel: channel.sourceId,
         })
-        await handleMessage(sourceAuthorId, message, gateway, directory)
+        await handleMessage(sourceAuthorId, message, channel, directory)
     })
 }

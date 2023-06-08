@@ -1,21 +1,24 @@
-import { Context, KnownContext, StateResult } from '../sdk/state.ts'
-import { isMessageOfType, Message, UnknownMessage } from '../sdk/message.ts'
-import { Gateway } from './gateways/gateway.ts'
-import { getKv, setKv } from './services/vars/vars.ts'
-import { track } from './services/track/track.ts'
-import { getUser, mergeUser } from './services/user/user.ts'
 import { executeHook } from './hooks.ts'
-import { config } from './config.ts'
-import { logger } from './log.ts'
 import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
-import { User } from '../sdk/user.ts'
+import {
+    User,
+    Context,
+    KnownContext,
+    StateResult,
+    isMessageOfType,
+    Message,
+    UnknownMessage,
+    Channel,
+    config,
+    logger,
+} from '../mod.ts'
 
-const sendMessage = async (sourceUserId: string, messageOrText: UnknownMessage | string, gateway: Gateway) => {
+const sendMessage = async (sourceUserId: string, messageOrText: UnknownMessage | string, channel: Channel) => {
     const message =
         typeof messageOrText === 'string'
             ? ({ type: 'text', content: messageOrText } as Message<'text'>)
             : messageOrText
-    await gateway.send(sourceUserId, message)
+    await channel.send(sourceUserId, message)
 }
 
 const executeState = async (directory: string, context: Context, currentState = 'start'): Promise<StateResult> => {
@@ -43,29 +46,29 @@ const executeState = async (directory: string, context: Context, currentState = 
 export const handleMessage = async (
     sourceAuthorId: string,
     message: UnknownMessage,
-    gateway: Gateway,
+    channel: Channel,
     directory: string,
     iterations = 0,
     handleEvent = true,
 ): Promise<void> => {
-    const userId = User.getIdFromSourceId(sourceAuthorId, gateway.sourceId)
+    const userId = User.getIdFromSourceId(sourceAuthorId, channel.sourceId)
     if (iterations > 10) {
         throw new Error(`Too many iterations for user '${userId}'`)
     }
 
-    const user = (await getUser(userId)) || (await mergeUser(userId, {}))
+    const user = (await config().storage.getUser(userId)) || (await config().storage.mergeUser(userId, {}))
 
     const context: Context = {
         author: user,
         message,
         config: config().config || {},
-        getKv: (k) => getKv(user.id, k),
-        setKv: (k, v) => setKv(user.id, k, v),
+        getKv: (k) => config().storage.getKv(user.id, k),
+        setKv: (k, v) => config().storage.setKv(user.id, k, v),
         mergeUser: async (u) => {
-            context.author = await mergeUser(user.id, u)
+            context.author = await config().storage.mergeUser(user.id, u)
         },
-        send: (m) => sendMessage(sourceAuthorId, m, gateway),
-        track: (e, p) => track(user.id, e, p),
+        send: (m) => sendMessage(sourceAuthorId, m, channel),
+        track: (e, p) => config().storage.track(user.id, e, p),
     }
 
     try {
@@ -73,15 +76,15 @@ export const handleMessage = async (
             logger.debug('Executing event hook for user ' + user.id, {
                 user: user.id,
                 message,
-                gateway: gateway.sourceId,
+                channel: channel.sourceId,
             })
 
             const stateResult = await executeHook(directory, 'event', context as KnownContext<'event'>)
             if (stateResult) {
-                await setKv(user.id, '#last-state', await getKv(user.id, '#state'))
-                await setKv(user.id, '#state', stateResult.next || null)
+                await config().storage.setKv(user.id, '#last-state', await config().storage.getKv(user.id, '#state'))
+                await config().storage.setKv(user.id, '#state', stateResult.next || null)
                 if (stateResult.input === false) {
-                    return await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1, false)
+                    return await handleMessage(sourceAuthorId, message, channel, directory, iterations + 1, false)
                 }
             }
         } else {
@@ -92,20 +95,20 @@ export const handleMessage = async (
                 }
             }
 
-            const currentState = await getKv<string>(user.id, '#state')
+            const currentState = await config().storage.getKv<string>(user.id, '#state')
             logger.debug('Executing state ' + currentState + ' for user ' + user.id, {
                 user: user.id,
                 message,
-                gateway: gateway.sourceId,
+                channel: channel.sourceId,
                 state: currentState,
             })
 
             const stateResult = await executeState(directory, context, currentState)
-            await setKv(user.id, '#last-state', currentState)
-            await setKv(user.id, '#state', stateResult.next)
+            await config().storage.setKv(user.id, '#last-state', currentState)
+            await config().storage.setKv(user.id, '#state', stateResult.next)
 
             if (stateResult.input === false) {
-                return await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1, handleEvent)
+                return await handleMessage(sourceAuthorId, message, channel, directory, iterations + 1, handleEvent)
             }
         }
     } catch (err) {
@@ -113,10 +116,10 @@ export const handleMessage = async (
 
         const stateResult = await executeHook(directory, 'error', context, err)
         if (stateResult) {
-            await setKv(user.id, '#last-state', await getKv(user.id, '#state'))
-            await setKv(user.id, '#state', stateResult.next)
+            await config().storage.setKv(user.id, '#last-state', await config().storage.getKv(user.id, '#state'))
+            await config().storage.setKv(user.id, '#state', stateResult.next)
             if (stateResult.input === false) {
-                return await handleMessage(sourceAuthorId, message, gateway, directory, iterations + 1, handleEvent)
+                return await handleMessage(sourceAuthorId, message, channel, directory, iterations + 1, handleEvent)
             }
         }
     }

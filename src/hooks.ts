@@ -1,6 +1,5 @@
-import { logger } from './log.ts'
+import { Hooks, logger } from '../mod.ts'
 import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
-import { Hooks } from '../sdk/hooks.ts'
 
 export const executeHook = async <THook extends keyof Hooks>(
     directory: string,

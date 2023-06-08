@@ -70,33 +70,7 @@ export class Options {
 
         const input = message.content.toLowerCase().trim()
 
-        let index = -1
-        if (input.match(/primeir[oa]/g)) {
-            index = 1
-        } else if (input.match(/segund[oa]/g)) {
-            index = 2
-        } else if (input.match(/terceir[oa]/g)) {
-            index = 3
-        } else if (input.match(/terç[oa]/g)) {
-            index = 3
-        } else if (input.match(/quart[oa]/g)) {
-            index = 4
-        } else if (input.match(/quint[oa]/g)) {
-            index = 5
-        } else if (input.match(/sext[oa]/g)) {
-            index = 6
-        } else if (input.match(/s[eé]tim[oa]/g)) {
-            index = 7
-        } else if (input.match(/oitav[oa]/g)) {
-            index = 8
-        } else if (input.match(/non[oa]/g)) {
-            index = 9
-        }
-
-        if (index === -1) {
-            index = Number(input)
-        }
-
+        const index = Number(input)
         if (index > 0 && index <= this.options.length) {
             return { text: this.options[index - 1].originalText, index: index - 1 }
         }

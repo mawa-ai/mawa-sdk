@@ -1,5 +1,4 @@
-import { MessageHook } from '../../sdk/hooks.ts'
-import { Context } from '../../sdk/state.ts'
+import { MessageHook, Context } from '../../mod.ts'
 
 export const message: MessageHook = (context: Context) => {
     console.log('New message:', context.message.content)

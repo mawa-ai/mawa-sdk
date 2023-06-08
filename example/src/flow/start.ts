@@ -1,4 +1,4 @@
-import { Context, StateResult } from '../../../sdk/state.ts'
+import { Context, StateResult } from '../../../mod.ts'
 
 export default async function (context: Context): Promise<StateResult> {
     await context.send(`Olá, qual seu nome?`)

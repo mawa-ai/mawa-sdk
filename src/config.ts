@@ -1,8 +1,6 @@
-import { MawaConfiguration } from '../sdk/config.ts'
-import { logger } from './log.ts'
+import { config, setConfiguration, logger } from '../mod.ts'
 import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
 
-let configuration: MawaConfiguration
 const configurationWatchers: (() => void | Promise<void>)[] = []
 
 const loadConfiguration = async (configFile: string, terminateIfError = false) => {
@@ -10,8 +8,9 @@ const loadConfiguration = async (configFile: string, terminateIfError = false) =
         logger.debug('Loading configuration file', configFile)
 
         const config = await import(`file:///${configFile}?${Date.now()}`)
-        configuration = config.default
+        const configuration = config.default
 
+        setConfiguration(configuration)
         logger.debug('Configuration loaded', configuration)
 
         configurationWatchers.forEach((watcher) => watcher())
@@ -33,8 +32,8 @@ const initializeConfigurationChangesWatcher = async (configFile: string) => {
     }
 }
 
-export const onConfigurationsLoaded = (callback: typeof configurationWatchers[0]) => {
-    if (configuration) {
+export const onConfigurationsLoaded = (callback: (typeof configurationWatchers)[0]) => {
+    if (config()) {
         callback()
     }
 
@@ -50,5 +49,3 @@ export const initializeConfiguration = async (directory: string, watchForChanges
         initializeConfigurationChangesWatcher(configFile)
     }
 }
-
-export const config = () => configuration

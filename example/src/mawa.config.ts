@@ -1,6 +1,8 @@
-import { Configuration } from '../../sdk/config.ts'
+import { Configuration } from '../../mod.ts'
 import { load } from 'https://deno.land/std@0.170.0/dotenv/mod.ts'
 import { fromFileUrl } from 'https://deno.land/std@0.170.0/path/mod.ts'
+import { MemoryStorage } from '../../src/storage/memory.ts'
+import { WebhookChannel } from '../../src/channel/webhook.ts'
 
 await load({
     export: true,
@@ -8,26 +10,9 @@ await load({
 })
 
 const config: Configuration = {
-    hosting: {
-        http: {
-            port: Number(Deno.env.get('PORT')),
-        },
-    },
     logLevel: 'WARNING',
-    channels: {
-        webhook: {
-            url: 'http://localhost:3001',
-        },
-        whatsapp: {
-            token: Deno.env.get('WHATSAPP_TOKEN') as string,
-            numberId: Deno.env.get('WHATSAPP_NUMBER_ID') as string,
-            verifyToken: Deno.env.get('WHATSAPP_VERIFY_TOKEN') as string,
-        },
-        web: {},
-    },
-    storage: {
-        type: 'memory',
-    },
+    channels: [new WebhookChannel({ url: 'http://localhost:3001' })],
+    storage: new MemoryStorage(),
 }
 
 export default config

@@ -1,10 +1,9 @@
-import { isMessage, UnknownMessage } from '../../../sdk/message.ts'
-import { Gateway, SourceMessage } from '../gateway.ts'
-import { config } from '../../config.ts'
-import { WebhookChannelConfiguration } from '../../../sdk/config.ts'
+import { Channel, SourceMessage, UnknownMessage, isMessage } from '../../mod.ts'
 
-export class WebhookGateway implements Gateway {
+export class WebhookChannel implements Channel {
     public readonly sourceId = 'webhook'
+
+    constructor(private readonly config: { url: string; authorizationToken?: string }) {}
 
     public async receive(request: Request): Promise<SourceMessage | Response> {
         if (this.config.authorizationToken && request.headers.get('Authorization') !== this.config.authorizationToken) {
@@ -44,9 +43,5 @@ export class WebhookGateway implements Gateway {
         if (result.status !== 200) {
             throw new Error(`Failed to send message to ${this.config.url}`)
         }
-    }
-
-    private get config(): WebhookChannelConfiguration {
-        return config().channels.webhook!
     }
 }

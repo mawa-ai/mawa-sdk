@@ -2,7 +2,7 @@ import { getLogger, handlers, LevelName } from 'https://deno.land/std@0.170.0/lo
 
 export const logger = getLogger('mawa')
 
-export const setup = (levelName: LevelName) => {
+export const setupLogger = (levelName: LevelName) => {
     logger.levelName = levelName
     logger.handlers = [
         new handlers.ConsoleHandler('NOTSET', {

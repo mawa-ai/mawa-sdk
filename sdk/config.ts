@@ -1,52 +1,18 @@
-export type HttpHostingConfiguration = {
-    port: number
-}
-
-export type HostingConfiguration = {
-    http?: HttpHostingConfiguration
-}
-
-export type WebhookChannelConfiguration = {
-    url: string
-    authorizationToken?: string
-}
-
-export type WhatsappChannelConfiguration = {
-    numberId: string
-    token: string
-    verifyToken: string
-}
-
-export type WebChannelConfiguration = {
-    allowedOrigins?: (string | RegExp)[]
-    authorizationToken?: string
-}
-
-export type ChannelsConfiguration = {
-    webhook?: WebhookChannelConfiguration
-    whatsapp?: WhatsappChannelConfiguration
-    web?: WebChannelConfiguration
-}
+import { Channel } from './channel.ts'
+import { Storage } from './storage.ts'
 
 export type BotConfiguration = Record<string, unknown>
 
-export type MongoDbConfiguration = {
-    url: string
-}
-
-export type StorageConfiguration =
-    | {
-          type: 'memory'
-      }
-    | {
-          type: 'mongodb'
-          config: MongoDbConfiguration
-      }
-
 export type Configuration = {
-    hosting: HostingConfiguration
-    channels: ChannelsConfiguration
-    storage: StorageConfiguration
+    channels: Channel[]
+    storage: Storage
     logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
     config?: BotConfiguration
 }
+
+let currentConfiguration: Configuration
+export const setConfiguration = (configuration: Configuration) => {
+    currentConfiguration = configuration
+}
+
+export const config = () => currentConfiguration
