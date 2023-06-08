@@ -1,4 +1,4 @@
-import { MessageHandler, config, logger, setupLogger } from '../../mod.ts'
+import { MessageHandler, logger } from '../../mod.ts'
 import { resolveChannel } from '../channel/channel.ts'
 import { initializeConfiguration } from '../config.ts'
 import { handleMessage } from '../state.ts'
@@ -37,12 +37,6 @@ const initializeHttp = async (port: number, onMessage: MessageHandler) => {
 
 export const start = async (directory: string, port = 5501) => {
     await initializeConfiguration(directory, true)
-
-    const logLevel = config().logLevel
-    if (logLevel) {
-        setupLogger(logLevel)
-    }
-
     await initializeHttp(port, async (sourceAuthorId, message, channel) => {
         logger.info('Received message from ' + sourceAuthorId + ' via ' + channel.sourceId, {
             sourceAuthorId: sourceAuthorId,

@@ -1,7 +1,7 @@
-import { config, setConfiguration, logger } from '../mod.ts'
+import { config, setConfiguration, logger, Configuration } from '../mod.ts'
 import { resolve } from 'https://deno.land/std@0.170.0/path/mod.ts'
 
-const configurationWatchers: (() => void | Promise<void>)[] = []
+const configurationWatchers: ((configuration: Configuration) => void | Promise<void>)[] = []
 
 const loadConfiguration = async (configFile: string, terminateIfError = false) => {
     try {
@@ -13,7 +13,7 @@ const loadConfiguration = async (configFile: string, terminateIfError = false) =
         setConfiguration(configuration)
         logger.debug('Configuration loaded', configuration)
 
-        configurationWatchers.forEach((watcher) => watcher())
+        configurationWatchers.forEach((watcher) => watcher(configuration))
     } catch (err) {
         logger.error(err, 'Error loading configuration file')
         if (terminateIfError) {
@@ -33,8 +33,9 @@ const initializeConfigurationChangesWatcher = async (configFile: string) => {
 }
 
 export const onConfigurationsLoaded = (callback: (typeof configurationWatchers)[0]) => {
-    if (config()) {
-        callback()
+    const configuration = config()
+    if (configuration) {
+        callback(configuration)
     }
 
     configurationWatchers.push(callback)

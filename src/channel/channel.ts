@@ -1,4 +1,4 @@
-import { MessageHandler, config } from '../../mod.ts'
+import { MessageHandler, config, logger } from '../../mod.ts'
 
 export const resolveChannel = async (request: Request, onMessage: MessageHandler): Promise<Response> => {
     const channelPatterns = config().channels.map((channel) => ({
@@ -8,6 +8,7 @@ export const resolveChannel = async (request: Request, onMessage: MessageHandler
 
     const channel = channelPatterns.find((channel) => channel.pattern.test(request.url))?.channel
     if (!channel) {
+        logger.debug('Failed to get channel for ' + request.url, { channels: config().channels.map((c) => c.sourceId) })
         throw new Error('No channel found for ' + request.url)
     }
 
