@@ -11,9 +11,9 @@ const loadConfiguration = async (configFile: string, terminateIfError = false) =
         const configuration = config.default
 
         setConfiguration(configuration)
-        logger.debug('Configuration loaded', configuration)
-
         configurationWatchers.forEach((watcher) => watcher(configuration))
+
+        logger.debug('Configuration loaded', configuration)
     } catch (err) {
         logger.error(err, 'Error loading configuration file')
         if (terminateIfError) {
@@ -49,4 +49,18 @@ export const initializeConfiguration = async (directory: string, watchForChanges
         // Cannot await this function, otherwise the server will never start
         initializeConfigurationChangesWatcher(configFile)
     }
+
+    const plugins = config().plugins ?? []
+    await Promise.all(
+        plugins.map(async (plugin) => {
+            try {
+                if (plugin.initialize) {
+                    await plugin.initialize()
+                }
+            } catch (err) {
+                logger.error(err, `Error initializing plugin ${plugin.id}`)
+                throw err
+            }
+        }),
+    )
 }

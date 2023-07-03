@@ -1,3 +1,4 @@
+import { UnknownMessage } from './message.ts'
 import { Context, KnownContext, StateResult } from './state.ts'
 
 /**
@@ -5,7 +6,15 @@ import { Context, KnownContext, StateResult } from './state.ts'
  * @param context The context of the message.
  * @returns Return true to stop the execution of the state.
  */
-export type MessageHook = (context: Context) => Promise<true | void>
+export type UserMessageHook = (context: Context) => Promise<true | void>
+
+/**
+ * A hook that is executed when a message is sent or received.
+ * @param context The context of the message.
+ * @param direction The direction of the message.
+ * @param message The message that was sent or received.
+ */
+export type MessageHook = (context: Context, direction: 'sent' | 'received', message: UnknownMessage) => Promise<void>
 
 /**
  * A hook that is executed when a user is created.
@@ -22,6 +31,7 @@ export type EventHook = (context: KnownContext<'event'>) => Promise<StateResult 
 
 export type Hooks = {
     event: EventHook
+    usermessage: UserMessageHook
     message: MessageHook
     error: ErrorHook
 }

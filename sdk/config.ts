@@ -1,4 +1,5 @@
 import { Channel } from './channel.ts'
+import { Plugin } from './plugin.ts'
 import { Storage } from './storage.ts'
 
 export type BotConfiguration = Record<string, unknown>
@@ -8,6 +9,7 @@ export type Configuration = {
     storage: Storage
     logLevel?: 'DEBUG' | 'INFO' | 'WARNING' | 'ERROR'
     config?: BotConfiguration
+    plugins?: Plugin[]
 }
 
 let currentConfiguration: Configuration

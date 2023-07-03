@@ -1,6 +1,6 @@
-import { MessageHook, Context } from '../../mod.ts'
+import { Context, UserMessageHook } from '../../mod.ts'
 
-export const message: MessageHook = (context: Context) => {
+export const message: UserMessageHook = (context: Context) => {
     console.log('New message:', context.message.content)
     return Promise.resolve()
 }

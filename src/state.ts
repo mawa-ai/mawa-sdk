@@ -13,34 +13,74 @@ import {
     logger,
 } from '../mod.ts'
 
-const sendMessage = async (sourceUserId: string, messageOrText: UnknownMessage | string, channel: Channel) => {
+const sendMessage = async (
+    directory: string,
+    context: Context,
+    sourceUserId: string,
+    messageOrText: UnknownMessage | string,
+    channel: Channel,
+) => {
     const message =
         typeof messageOrText === 'string'
             ? ({ type: 'text', content: messageOrText } as Message<'text'>)
             : messageOrText
     await channel.send(sourceUserId, message)
+    await executeHook(directory, 'message', context, 'sent', message)
 }
 
 const executeState = async (directory: string, context: Context, currentState = 'start'): Promise<StateResult> => {
     const [filename, action] = currentState.split('.')
-    const file = resolve(`${directory}/flow/${filename}.ts`)
 
     try {
+        if (filename.startsWith('#')) {
+            const plugin = config().plugins?.find((p) => p.id === filename.substring(1))
+            if (plugin) {
+                const state = plugin.states[action]
+                if (!state) {
+                    throw new Error(`State ${action} not found in plugin ${plugin.id}`)
+                }
+
+                return await state(context)
+            }
+        }
+
+        const file = resolve(`${directory}/flow/${filename}.ts`)
+
         const module = await import('file:///' + file)
-        const result = await module[action || 'default'](context)
-        return result
+        return await module[action || 'default'](context)
     } catch (err) {
         if (currentState === 'start') {
             throw err
         }
 
-        logger.warning(err, "Couldn't find state " + currentState + ' in file ' + file + ', executing default state', {
+        logger.warning(err, "Couldn't find state " + currentState + ', executing default state', {
             user: context.author.id,
         })
         const module = await import('file:///' + resolve(`${directory}/flow/start.ts`))
-        const result = await module.default(context)
-        return result
+        return await module.default(context)
     }
+}
+
+const buildContext = (
+    directory: string,
+    user: User,
+    message: UnknownMessage,
+    channel: Channel,
+    sourceAuthorId: string,
+): Context => {
+    const context: Context = {
+        author: user,
+        message,
+        config: config().config ?? {},
+        getKv: (k) => config().storage.getKv(user.id, k),
+        setKv: (k, v) => config().storage.setKv(user.id, k, v),
+        mergeUser: async (u) => {
+            context.author = await config().storage.mergeUser(user.id, u)
+        },
+        send: (m) => sendMessage(directory, context, sourceAuthorId, m, channel),
+        track: (e, p) => config().storage.track(user.id, e, p),
+    }
+    return context
 }
 
 export const handleMessage = async (
@@ -56,20 +96,8 @@ export const handleMessage = async (
         throw new Error(`Too many iterations for user '${userId}'`)
     }
 
-    const user = (await config().storage.getUser(userId)) || (await config().storage.mergeUser(userId, {}))
-
-    const context: Context = {
-        author: user,
-        message,
-        config: config().config || {},
-        getKv: (k) => config().storage.getKv(user.id, k),
-        setKv: (k, v) => config().storage.setKv(user.id, k, v),
-        mergeUser: async (u) => {
-            context.author = await config().storage.mergeUser(user.id, u)
-        },
-        send: (m) => sendMessage(sourceAuthorId, m, channel),
-        track: (e, p) => config().storage.track(user.id, e, p),
-    }
+    const user = (await config().storage.getUser(userId)) ?? (await config().storage.mergeUser(userId, {}))
+    const context = buildContext(directory, user, message, channel, sourceAuthorId)
 
     try {
         if (handleEvent && isMessageOfType(message, 'event')) {
@@ -89,7 +117,8 @@ export const handleMessage = async (
             }
         } else {
             if (iterations === 0) {
-                const hookResult = await executeHook(directory, 'message', context)
+                const hookResult = await executeHook(directory, 'usermessage', context)
+                await executeHook(directory, 'message', context, 'received', message)
                 if (hookResult === true) {
                     return
                 }

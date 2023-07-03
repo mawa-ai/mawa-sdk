@@ -1,4 +1,5 @@
 export * from './sdk/config.ts'
+export * from './sdk/plugin.ts'
 export * from './sdk/storage.ts'
 export * from './sdk/channel.ts'
 export * from './sdk/hooks.ts'
